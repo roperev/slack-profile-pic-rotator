@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slack Profile Pic Rotator</title>
+  <style>
+    :root,
+    [data-theme="default"] {
+      --bg: #080508;
+      --card-rgb: 0, 0, 0;
+      --accent: #0f3460;
+      --text: #e8e8e8;
+      --success: #4ade80;
+      --muted: #94a3b8;
+      --font-family: system-ui, -apple-system, sans-serif;
+      --h1-size: 2rem;
+      --h2-size: 1.5rem;
+      --body-font-size: 1rem;
+      --card-heading-color: #fff;
+      --source-info-color: #fff;
+      --primary-btn: #2563eb;
+      --error-color: #f87171;
+      --feedback-color: #f87171;
+      --p1x: 30%; --p1y: 40%;
+      --p2x: 70%; --p2y: 25%;
+      --p3x: 55%; --p3y: 75%;
+      --p4x: 15%; --p4y: 65%;
+      --hue-rotate: 0deg;
+    }
+
+    [data-theme="adobe"] {
+      --bg: #000000;
+      --card-rgb: 255, 255, 255;
+      --accent: #2a2a2a;
+      --text: #e5e5e5;
+      --success: #eb1000;
+      --muted: #d8d8d8;
+      --font-family: "Adobe Clean", "Source Sans 3", system-ui, sans-serif;
+      --h1-size: 2.1rem;
+      --h2-size: 1.4rem;
+      --body-font-size: 0.9375rem;
+      --card-heading-color: #ffffff;
+      --source-info-color: #e0e0e0;
+      --primary-btn: #eb1000;
+      --error-color: #ff6b6b;
+      --feedback-color: #eb1000;
+      --hue-rotate: 0deg;
+    }
+    * { box-sizing: border-box; }
+    @property --p1x { syntax: "<percentage>"; initial-value: 30%; inherits: false; }
+    @property --p1y { syntax: "<percentage>"; initial-value: 40%; inherits: false; }
+    @property --p2x { syntax: "<percentage>"; initial-value: 70%; inherits: false; }
+    @property --p2y { syntax: "<percentage>"; initial-value: 25%; inherits: false; }
+    @property --p3x { syntax: "<percentage>"; initial-value: 55%; inherits: false; }
+    @property --p3y { syntax: "<percentage>"; initial-value: 75%; inherits: false; }
+    @property --p4x { syntax: "<percentage>"; initial-value: 15%; inherits: false; }
+    @property --p4y { syntax: "<percentage>"; initial-value: 65%; inherits: false; }
+    @property --hue-rotate { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+    @keyframes plasma1 {
+      0% { --p1x: 10%; --p1y: 20%; }
+      25% { --p1x: 90%; --p1y: 30%; }
+      50% { --p1x: 85%; --p1y: 85%; }
+      75% { --p1x: 15%; --p1y: 80%; }
+      100% { --p1x: 10%; --p1y: 20%; }
+    }
+    @keyframes plasma2 {
+      0% { --p2x: 85%; --p2y: 15%; }
+      33% { --p2x: 20%; --p2y: 80%; }
+      66% { --p2x: 25%; --p2y: 25%; }
+      100% { --p2x: 85%; --p2y: 15%; }
+    }
+    @keyframes plasma3 {
+      0% { --p3x: 50%; --p3y: 90%; }
+      50% { --p3x: 5%; --p3y: 10%; }
+      100% { --p3x: 50%; --p3y: 90%; }
+    }
+    @keyframes plasma4 {
+      0% { --p4x: 20%; --p4y: 50%; }
+      33% { --p4x: 90%; --p4y: 70%; }
+      66% { --p4x: 80%; --p4y: 15%; }
+      100% { --p4x: 20%; --p4y: 50%; }
+    }
+    @keyframes plasma-hue {
+      0% { --hue-rotate: 0deg; }
+      100% { --hue-rotate: 360deg; }
+    }
+    @keyframes plasma-hue-adobe {
+      0%, 100% { --hue-rotate: 0deg; }
+      50% { --hue-rotate: 45deg; }
+    }
+    @keyframes plasma-drift {
+      0% { background-position: 0% 50%, 0% 50%, 0% 50%, 0% 50%, 0% 50%; }
+      100% { background-position: 0% 50%, 0% 50%, 0% 50%, 0% 50%, 400% 50%; }
+    }
+    body {
+      font-family: var(--font-family);
+      font-size: var(--body-font-size);
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 2rem;
+      min-height: 100vh;
+      position: relative;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(
+          ellipse 140% 140% at var(--p1x) var(--p1y),
+          rgba(80, 180, 220, 0.5) 0%,
+          rgba(40, 120, 180, 0.3) 25%,
+          transparent 60%
+        ),
+        radial-gradient(
+          ellipse 130% 130% at var(--p2x) var(--p2y),
+          rgba(100, 220, 140, 0.48) 0%,
+          rgba(60, 180, 100, 0.25) 30%,
+          transparent 58%
+        ),
+        radial-gradient(
+          ellipse 135% 135% at var(--p3x) var(--p3y),
+          rgba(200, 220, 80, 0.45) 0%,
+          rgba(160, 180, 50, 0.22) 35%,
+          transparent 62%
+        ),
+        radial-gradient(
+          ellipse 125% 125% at var(--p4x) var(--p4y),
+          rgba(120, 200, 220, 0.42) 0%,
+          rgba(70, 150, 180, 0.2) 28%,
+          transparent 60%
+        ),
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(80, 180, 220, 0.2) 20%,
+          rgba(100, 220, 140, 0.25) 40%,
+          rgba(200, 220, 80, 0.2) 60%,
+          rgba(120, 200, 220, 0.2) 80%,
+          transparent 100%
+        );
+      background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 400% 100%;
+      background-position: 0% 50%, 0% 50%, 0% 50%, 0% 50%, 0% 50%;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      filter: hue-rotate(var(--hue-rotate));
+      animation:
+        plasma1 28s ease-in-out infinite,
+        plasma2 32s ease-in-out infinite 0.4s,
+        plasma3 25s ease-in-out infinite 0.8s,
+        plasma4 30s ease-in-out infinite 0.2s,
+        plasma-hue 120s linear infinite,
+        plasma-drift 80s linear infinite;
+    }
+    [data-theme="adobe"] body::before {
+      animation:
+        plasma1 28s ease-in-out infinite,
+        plasma2 32s ease-in-out infinite 0.4s,
+        plasma3 25s ease-in-out infinite 0.8s,
+        plasma4 30s ease-in-out infinite 0.2s,
+        plasma-hue-adobe 120s ease-in-out infinite,
+        plasma-drift 80s linear infinite;
+    }
+    [data-theme="adobe"] body::before {
+      background-image:
+        radial-gradient(
+          ellipse 140% 140% at var(--p1x) var(--p1y),
+          rgba(235, 16, 0, 0.4) 0%,
+          rgba(180, 0, 0, 0.2) 30%,
+          transparent 55%
+        ),
+        radial-gradient(
+          ellipse 130% 130% at var(--p2x) var(--p2y),
+          rgba(0, 0, 0, 0.6) 0%,
+          rgba(40, 0, 0, 0.25) 40%,
+          transparent 65%
+        ),
+        radial-gradient(
+          ellipse 135% 135% at var(--p3x) var(--p3y),
+          rgba(235, 16, 0, 0.25) 0%,
+          rgba(120, 0, 0, 0.12) 35%,
+          transparent 60%
+        ),
+        radial-gradient(
+          ellipse 125% 125% at var(--p4x) var(--p4y),
+          rgba(0, 0, 0, 0.5) 0%,
+          rgba(80, 0, 0, 0.15) 30%,
+          transparent 58%
+        ),
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(235, 16, 0, 0.08) 15%,
+          rgba(0, 0, 0, 0.3) 35%,
+          rgba(235, 16, 0, 0.06) 55%,
+          rgba(0, 0, 0, 0.2) 75%,
+          transparent 100%
+        );
+    }
+    body > * {
+      position: relative;
+      z-index: 1;
+    }
+    h1 { font-size: var(--h1-size); margin-top: 0; }
+    h2 { font-size: var(--h2-size); margin: 0 0 1.35rem; color: var(--muted); }
+    .card h2 { color: var(--card-heading-color); }
+    .card h2 .muted-path { color: var(--muted); }
+    .card h2 .path-link { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+    .card h2 .path-link:hover { opacity: 0.9; }
+    .controls-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .controls-wrap > .card {
+      margin-bottom: 0;
+    }
+    .cards-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: 1rem;
+      margin: 0 auto;
+    }
+    .cards-row .card {
+      margin-bottom: 0;
+      max-width: 800px;
+      width: 100%;
+    }
+    @media (min-width: 1680px) {
+      .cards-row {
+        grid-template-columns: 800px 800px;
+        justify-content: center;
+        justify-items: stretch;
+      }
+      .cards-row .card {
+        max-width: none;
+      }
+    }
+    .card {
+      background: rgba(var(--card-rgb), 0.5);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-width: 720px;
+      margin-bottom: 1rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    [data-theme="adobe"] .card {
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.18) 0%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.12) 100%
+      );
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      color: #e8e8e8;
+    }
+    [data-theme="adobe"] .card h1,
+    [data-theme="adobe"] .card h2 { color: #ffffff; }
+    [data-theme="adobe"] .card .status { color: #d8d8d8; }
+    [data-theme="adobe"] .card .status.connected { color: #eb1000; }
+    [data-theme="adobe"] .card #sourceInfo { color: #e0e0e0; }
+    [data-theme="adobe"] .card .feedback { color: #eb1000; }
+    [data-theme="adobe"] .card .error { color: #ff6b6b; }
+    [data-theme="adobe"] .card .muted-path { color: #d0d0d0; }
+    [data-theme="adobe"] .card label { color: #d8d8d8; }
+    [data-theme="adobe"] .card button {
+      background: #2a2a2a;
+      color: #fff;
+    }
+    [data-theme="adobe"] .card button.primary {
+      background: #eb1000;
+      color: #fff;
+    }
+    [data-theme="adobe"] .card select {
+      background: #2a2a2a;
+      color: #fff;
+    }
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .status { color: var(--muted); font-size: 0.9rem; margin: 0; }
+    .status.connected { color: var(--success); }
+    .row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center; }
+    .row.interval-row { justify-content: center; }
+    #sourceInfo {
+      text-align: center;
+      color: var(--source-info-color);
+      line-height: 1.85;
+      margin: 1.0rem 0 0;
+    }
+    button {
+      background: var(--accent);
+      color: var(--text);
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    button:hover { filter: brightness(1.15); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.primary { background: var(--primary-btn); }
+    select {
+      background: var(--accent);
+      color: var(--text);
+      border: none;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    .error {
+      color: var(--error-color);
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      display: none;
+    }
+    .error:not(:empty) {
+      display: block;
+    }
+    .feedback {
+      color: var(--feedback-color);
+      font-weight: bold;
+      font-size: 1.05rem;
+      margin: 0;
+      min-width: 0;
+    }
+    .feedback.visible {
+      animation: feedback-burst-in 0.25s ease-out;
+    }
+    .feedback.fade-out {
+      animation: feedback-fade-out 0.4s ease-in forwards;
+    }
+    @keyframes feedback-burst-in {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes feedback-fade-out {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    .thumb-wrap {
+      text-align: center;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--accent);
+      border: 2px solid transparent;
+    }
+    .thumb-wrap.current-set {
+      border-color: var(--success);
+      box-shadow: 0 0 0 1px var(--success);
+    }
+    .thumb-wrap.next-up {
+      border-color: #eab308;
+      box-shadow: 0 0 0 1px #eab308;
+    }
+    .thumb-wrap img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+    }
+    .thumb-wrap .name {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.35rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+    }
+
+    .next-rotation {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.25rem;
+      margin-top: 0.5rem;
+    }
+    .next-rotation .step {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--accent);
+      border: 2px solid transparent;
+      flex-shrink: 0;
+      width: 80px;
+    }
+    .next-rotation .step {
+      cursor: pointer;
+    }
+    .next-rotation .step:hover {
+      filter: brightness(1.1);
+    }
+    .next-rotation .step.current-set {
+      border-color: var(--success);
+      box-shadow: 0 0 0 1px var(--success);
+    }
+    .next-rotation .step.next-up {
+      border-color: #eab308;
+      box-shadow: 0 0 0 1px #eab308;
+    }
+    .next-rotation .step img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      display: block;
+    }
+    .next-rotation .step .name {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.35rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 80px;
+      color: var(--muted);
+    }
+    .next-rotation .arrow {
+      color: var(--muted);
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    @keyframes set-pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); }
+      12.5% { transform: scale(1.2); box-shadow: 0 0 0 8px rgba(74, 222, 128, 0.2); }
+      25% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.1); }
+      37.5% { transform: scale(1.2); box-shadow: 0 0 0 8px rgba(74, 222, 128, 0.2); }
+      50% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.1); }
+      62.5% { transform: scale(1.2); box-shadow: 0 0 0 8px rgba(74, 222, 128, 0.2); }
+      75% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.1); }
+      87.5% { transform: scale(1.2); box-shadow: 0 0 0 8px rgba(74, 222, 128, 0.2); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+    }
+    .next-rotation .step.pulse {
+      animation: set-pulse 5s ease-in-out;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls-wrap">
+    <div class="card">
+      <h1>Slack Profile Pic Rotator</h1>
+    <div class="status-row">
+      <p class="status" id="status">Loading…</p>
+      <span id="feedback" class="feedback" aria-live="polite"></span>
+    </div>
+    <div class="row">
+      <button class="primary" id="changeNow">Change now</button>
+      <button id="pauseBtn">Pause</button>
+      <button id="resumeBtn">Resume</button>
+      <button id="rescanBtn">Rescan folder</button>
+    </div>
+    <div class="row interval-row">
+      <label for="interval">Interval:</label>
+      <select id="interval">
+        <option value="1">1 min</option>
+        <option value="5">5 min</option>
+        <option value="30">30 min</option>
+        <option value="60">1 hr</option>
+        <option value="240">4 hr</option>
+        <option value="720">12 hr</option>
+        <option value="1440">1 day</option>
+      </select>
+      <button id="setInterval">Set</button>
+    </div>
+    <div class="row interval-row">
+      <label for="theme">Theme:</label>
+      <select id="theme">
+        <option value="default">Default</option>
+        <option value="adobe">Adobe</option>
+      </select>
+    </div>
+    <p id="sourceInfo" class="status"></p>
+    <p id="error" class="error"></p>
+    </div>
+  </div>
+
+  <div class="cards-row">
+    <div class="card" id="imagesCard" style="display: none;">
+      <h2 id="imagesCardTitle">All images</h2>
+      <div class="grid" id="imageGrid"></div>
+    </div>
+
+    <div class="card" id="nextCard" style="display: none;">
+      <h2>Next rotation order</h2>
+    <p class="status">Green = currently set. Yellow = next. Click any image to set it as your profile pic and jump to that position.</p>
+    <div class="next-rotation" id="nextRotation"></div>
+    </div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const sourceInfoEl = document.getElementById('sourceInfo');
+    const errorEl = document.getElementById('error');
+    const changeNowBtn = document.getElementById('changeNow');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const rescanBtn = document.getElementById('rescanBtn');
+    const intervalSelect = document.getElementById('interval');
+    const setIntervalBtn = document.getElementById('setInterval');
+    const themeSelect = document.getElementById('theme');
+    const imageGrid = document.getElementById('imageGrid');
+    const nextRotation = document.getElementById('nextRotation');
+    const imagesCard = document.getElementById('imagesCard');
+    const nextCard = document.getElementById('nextCard');
+    const imagesCardTitle = document.getElementById('imagesCardTitle');
+    const feedbackEl = document.getElementById('feedback');
+
+    let lastImagesData = null;
+    let feedbackTimer = null;
+    let feedbackFadeTimer = null;
+
+    const THEME_STORAGE_KEY = 'slack-rotator-theme';
+    function applyTheme(theme) {
+      const value = theme === 'adobe' ? 'adobe' : 'default';
+      document.documentElement.setAttribute('data-theme', value);
+      if (themeSelect) themeSelect.value = value;
+      try { localStorage.setItem(THEME_STORAGE_KEY, value); } catch (_) {}
+    }
+    function initTheme() {
+      try {
+        const saved = localStorage.getItem(THEME_STORAGE_KEY) || 'default';
+        applyTheme(saved);
+      } catch (_) {
+        applyTheme('default');
+      }
+    }
+    initTheme();
+    if (themeSelect) {
+      themeSelect.addEventListener('change', () => applyTheme(themeSelect.value));
+    }
+
+    function setError(msg) {
+      errorEl.textContent = msg || '';
+    }
+
+    function showFeedback(msg, stayMs = 3000) {
+      if (feedbackTimer) clearTimeout(feedbackTimer);
+      if (feedbackFadeTimer) clearTimeout(feedbackFadeTimer);
+      feedbackEl.classList.remove('visible', 'fade-out');
+      feedbackEl.textContent = msg || '';
+      if (msg && stayMs > 0) {
+        feedbackEl.classList.add('visible');
+        feedbackTimer = setTimeout(() => {
+          feedbackEl.classList.add('fade-out');
+          feedbackFadeTimer = setTimeout(() => {
+            feedbackEl.textContent = '';
+            feedbackEl.classList.remove('visible', 'fade-out');
+            feedbackTimer = null;
+            feedbackFadeTimer = null;
+          }, 400);
+        }, stayMs);
+      }
+    }
+
+    async function fetchStatus() {
+      const res = await fetch('/api/status');
+      const data = await res.json();
+      statusEl.textContent = data.authenticated ? 'Slack connected' : 'Slack not connected (run: node src/index.js auth)';
+      statusEl.classList.toggle('connected', data.authenticated);
+      const line1 = data.imageSource === 'local' && data.localPath
+        ? `${data.imageCount} images found`
+        : 'No image source set (use CLI: set-source local /path)';
+      const line2 = data.imageCount > 0 && data.roundIndex != null
+        ? `Round ${(data.roundIndex ?? 0) + 1}/${data.imageCount}`
+        : '';
+      const line3 = `Status: ${data.paused ? 'Paused' : 'Running'}`;
+      sourceInfoEl.innerHTML = line2
+        ? `${escapeHtml(line1)}<br>${escapeHtml(line2)}<br>${escapeHtml(line3)}`
+        : `${escapeHtml(line1)}<br>${escapeHtml(line3)}`;
+      const pathDisplay = data.imageSource === 'local'
+        ? (data.localPath
+            ? `<span class="muted-path path-link" data-path="${escapeAttr(data.localPath)}">${escapeHtml(data.localPath)}</span>`
+            : `<span class="muted-path path-link" data-path="">Click to set path</span>`)
+        : '';
+      imagesCardTitle.innerHTML = data.imageSource === 'local'
+        ? `All Images from ${pathDisplay}`
+        : 'All Images';
+      imagesCard.style.display = data.imageSource === 'local' ? 'block' : 'none';
+      intervalSelect.value = String(data.intervalMinutes);
+      pauseBtn.disabled = data.paused;
+      resumeBtn.disabled = !data.paused;
+      changeNowBtn.disabled = !data.authenticated || data.imageCount === 0;
+      return data;
+    }
+
+    async function fetchImages() {
+      const res = await fetch('/api/images');
+      const data = await res.json();
+      if (!data.images || data.images.length === 0) {
+        nextCard.style.display = 'none';
+        return data;
+      }
+      imagesCard.style.display = 'block';
+      nextCard.style.display = 'block';
+
+      const L = data.roundOrder.length;
+      const currentPos = L > 0 ? (data.roundIndex - 1 + L) % L : 0;
+      const currentImageIndex = L > 0 ? data.roundOrder[currentPos] : null;
+      const nextImageIndex = L > 0 ? data.roundOrder[data.roundIndex] : null;
+
+      imageGrid.innerHTML = data.images.map((img) => {
+        let cls = '';
+        if (img.index === currentImageIndex) cls = ' current-set';
+        else if (img.index === nextImageIndex) cls = ' next-up';
+        return `<div class="thumb-wrap${cls}" title="${escapeAttr(img.filename)}" data-image-index="${img.index}">
+          <img src="/api/thumb/${img.index}" alt="" loading="lazy" />
+          <span class="name">${escapeHtml(img.filename)}</span>
+        </div>`;
+      }).join('');
+
+      if (data.roundOrder.length === data.images.length) {
+        lastImagesData = data;
+        const parts = [];
+        data.roundOrder.forEach((idx, pos) => {
+          const img = data.images[idx];
+          let cls = '';
+          if (pos === currentPos) cls = ' current-set';
+          else if (pos === data.roundIndex) cls = ' next-up';
+          const nameWithoutExt = img.filename.replace(/\.[^.]+$/, '') || img.filename;
+          parts.push(`<div class="step${cls}" title="${escapeAttr(img.filename)} (click to set)" data-image-index="${img.index}" data-round-pos="${pos}">
+            <img src="/api/thumb/${img.index}" alt="" loading="lazy" />
+            <span class="name">${escapeHtml(nameWithoutExt)}</span>
+          </div>`);
+          if (pos < data.roundOrder.length - 1) {
+            parts.push('<span class="arrow" aria-hidden="true">→</span>');
+          }
+        });
+        nextRotation.innerHTML = parts.join('');
+        nextRotation.querySelectorAll('.step').forEach((el) => {
+          el.addEventListener('click', () => {
+            const imageIndex = parseInt(el.getAttribute('data-image-index'), 10);
+            const clickedPos = parseInt(el.getAttribute('data-round-pos'), 10);
+            setError('');
+            if (!lastImagesData || lastImagesData.roundOrder.length === 0) return;
+            const L = lastImagesData.roundOrder.length;
+            const newCurrentPos = clickedPos;
+            const newRoundIndex = (clickedPos + 1) % L;
+            const newCurrentImageIndex = lastImagesData.roundOrder[newCurrentPos];
+            const newNextImageIndex = lastImagesData.roundOrder[newRoundIndex];
+
+            function applyOptimisticHighlight() {
+              nextRotation.querySelectorAll('.step').forEach((s) => {
+                const p = parseInt(s.getAttribute('data-round-pos'), 10);
+                s.classList.remove('current-set', 'next-up');
+                if (p === newCurrentPos) s.classList.add('current-set');
+                else if (p === newRoundIndex) s.classList.add('next-up');
+              });
+              imageGrid.querySelectorAll('.thumb-wrap').forEach((w) => {
+                const idx = parseInt(w.getAttribute('data-image-index'), 10);
+                w.classList.remove('current-set', 'next-up');
+                if (idx === newCurrentImageIndex) w.classList.add('current-set');
+                else if (idx === newNextImageIndex) w.classList.add('next-up');
+              });
+            }
+
+            applyOptimisticHighlight();
+            el.classList.add('pulse');
+            setTimeout(() => el.classList.remove('pulse'), 5000);
+
+            fetch('/api/set-to-index', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ imageIndex }),
+            })
+              .then((r) => r.json())
+              .then((result) => {
+                if (result.success) {
+                  lastImagesData = { ...lastImagesData, roundIndex: newRoundIndex };
+                  fetchStatus();
+                  fetchImages();
+                } else {
+                  setError(result.error || 'Failed');
+                  fetchImages();
+                }
+              })
+              .catch(() => {
+                setError('Request failed');
+                fetchImages();
+              });
+          });
+        });
+      } else {
+        lastImagesData = null;
+        nextRotation.innerHTML = '<span class="status">Next rotation order will appear after first change.</span>';
+      }
+      return data;
+    }
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+    function escapeAttr(s) {
+      return escapeHtml(s).replace(/"/g, '&quot;');
+    }
+
+    changeNowBtn.addEventListener('click', async () => {
+      setError('');
+      showFeedback('');
+      const nextStep = nextRotation.querySelector('.step.next-up');
+      if (nextStep) {
+        nextStep.classList.add('pulse');
+        setTimeout(() => nextStep.classList.remove('pulse'), 5000);
+      }
+      const res = await fetch('/api/change-now', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showFeedback('Profile pic updated');
+        await fetchStatus();
+        await fetchImages();
+      } else {
+        setError(data.error || 'Failed');
+      }
+    });
+
+    pauseBtn.addEventListener('click', async () => {
+      showFeedback('');
+      await fetch('/api/pause', { method: 'POST' });
+      await fetchStatus();
+      showFeedback('Paused');
+    });
+
+    resumeBtn.addEventListener('click', async () => {
+      showFeedback('');
+      await fetch('/api/resume', { method: 'POST' });
+      await fetchStatus();
+      showFeedback('Resumed');
+    });
+
+    rescanBtn.addEventListener('click', async () => {
+      setError('');
+      showFeedback('');
+      const res = await fetch('/api/rescan', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showFeedback('Folder rescanned');
+        await fetchStatus();
+        await fetchImages();
+      } else {
+        setError(data.error || 'Rescan failed');
+      }
+    });
+
+    setIntervalBtn.addEventListener('click', async () => {
+      const minutes = parseInt(intervalSelect.value, 10);
+      const res = await fetch('/api/interval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ minutes }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showFeedback('Interval set');
+        await fetchStatus();
+      }
+    });
+
+    imagesCardTitle.addEventListener('click', async (e) => {
+      if (!e.target.classList.contains('path-link')) return;
+      setError('');
+      showFeedback('');
+      const pathInput = prompt('Enter the full path to your image folder:', e.target.dataset.path || '');
+      if (pathInput == null) return;
+      const folderPath = pathInput.trim();
+      if (!folderPath) return;
+      try {
+        const res = await fetch('/api/source', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageSource: 'local', localPath: folderPath }),
+        });
+        const result = await res.json();
+        if (result.success) {
+          showFeedback('Folder set.');
+          await fetchStatus();
+          await fetchImages();
+        } else {
+          setError(result.error || 'Failed to set path');
+        }
+      } catch (err) {
+        setError(err.message || 'Request failed');
+      }
+    });
+
+    async function load() {
+      try {
+        await fetchStatus();
+        await fetchImages();
+      } catch {
+        statusEl.textContent = 'Cannot reach server. Is the rotator running? (node src/index.js start)';
+      }
+    }
+    load();
+  </script>
+</body>
+</html>

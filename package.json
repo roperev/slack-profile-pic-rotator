@@ -1,0 +1,26 @@
+{
+  "name": "slack-profile-pic-bot",
+  "version": "1.0.0",
+  "description": "Local service that rotates your Slack profile picture on a schedule",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js start",
+    "auth": "node src/index.js auth",
+    "change-now": "node src/index.js change-now",
+    "pause": "node src/index.js pause",
+    "resume": "node src/index.js resume",
+    "status": "node src/index.js status"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["slack", "profile", "avatar", "rotator"],
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "open": "^8.4.2",
+    "sharp": "^0.33.2"
+  }
+}
