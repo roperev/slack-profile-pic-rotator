@@ -3,6 +3,7 @@ import { runAuthFlow } from './slack-auth.js';
 import * as rotator from './rotator.js';
 import { getImageCount, listImages } from './images-local.js';
 import path from 'path';
+import os from 'os';
 
 const COMMANDS = ['auth', 'start', 'change-now', 'pause', 'resume', 'set-interval', 'set-source', 'status'];
 const INTERVAL_OPTIONS = [1, 5, 30, 60, 240, 720, 1440];
@@ -42,8 +43,19 @@ function requireAuth() {
   }
 }
 
+function isPathUnderSafeRoot(resolvedPath) {
+  const home = os.homedir();
+  const normalized = path.resolve(resolvedPath);
+  const homeNorm = path.resolve(home);
+  return normalized === homeNorm || normalized.startsWith(homeNorm + path.sep);
+}
+
 function validateLocalSource(localPath) {
   const resolved = path.resolve(localPath);
+  if (!isPathUnderSafeRoot(resolved)) {
+    console.error('Path must be under your home directory.');
+    process.exit(1);
+  }
   if (!listImages(resolved).length) {
     console.error(`No images found in ${resolved}. Add .jpg, .jpeg, .png, or .gif files.`);
     process.exit(1);

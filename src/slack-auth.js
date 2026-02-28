@@ -4,6 +4,15 @@ import { getTokens, saveTokens } from './config.js';
 
 const SCOPE = 'users.profile:write';
 
+function escapeHtml(s) {
+  if (typeof s !== 'string') return '';
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 export function buildAuthUrl() {
   const clientId = process.env.SLACK_CLIENT_ID;
   const redirectUri = process.env.SLACK_REDIRECT_URI || 'http://localhost:4000/slack/callback';
@@ -76,7 +85,9 @@ export function startCallbackServer() {
         const data = await tokenRes.json();
 
         if (!data.ok) {
-          res.status(400).send(`<h1>Slack error</h1><p>${data.error || 'Unknown error'}</p><pre>${JSON.stringify(data, null, 2)}</pre>`);
+          const errMsg = escapeHtml(data.error || 'Unknown error');
+          const jsonSafe = escapeHtml(JSON.stringify(data, null, 2));
+          res.status(400).send(`<h1>Slack error</h1><p>${errMsg}</p><pre>${jsonSafe}</pre>`);
           callbackResolve();
           return;
         }
@@ -98,7 +109,8 @@ export function startCallbackServer() {
           '<h1>Success!</h1><p>Slack is connected. You can close this window and return to the terminal.</p><p>Run: <code>rotator set-source local /path/to/pics</code> then <code>rotator start</code></p>'
         );
       } catch (err) {
-        res.status(500).send(`<h1>Error</h1><pre>${err.message}</pre>`);
+        const msg = escapeHtml(err?.message || String(err));
+        res.status(500).send(`<h1>Error</h1><pre>${msg}</pre>`);
       } finally {
         callbackResolve();
       }

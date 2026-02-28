@@ -84,6 +84,8 @@ node src/index.js set-source local ~/Pictures/slack-avatars
 
 **Option B — Web UI:** Start the rotator (step 3), then open **http://localhost:4001**. Click **"Click to set path"** (or the path next to "All Images from") and enter the full path to your folder when prompted (e.g. `/Users/you/Pictures/slack-avatars`). The path is saved to config and the rotation timer starts automatically.
 
+The image folder path must be **under your home directory** (e.g. `~/Pictures/slack-avatars` or `/Users/you/...`). Paths outside your home are rejected for security.
+
 You can change the folder later the same way (click the path in the UI or run `set-source` again).
 
 ### 3. Start the rotator (timer + web UI)
@@ -134,6 +136,15 @@ This installs a LaunchAgent that runs `node src/index.js start` with your projec
 - **Tokens:** `~/.slack-profile-rotator/tokens.json` — Slack OAuth tokens (created with restricted permissions).
 
 On macOS the config directory is `~/.slack-profile-rotator` unless `XDG_CONFIG_HOME` is set, in which case it is `$XDG_CONFIG_HOME/slack-profile-rotator`.
+
+## Security and performance
+
+- **Web UI** listens on `127.0.0.1:4001` only, so it is not reachable from other machines on the network.
+- **Image folder** must be under your home directory (enforced for both CLI and web UI) so the app cannot be pointed at system directories.
+- **Thumbnail endpoint** (`/api/thumb/:index`) validates that the requested file is inside the configured folder (no path traversal).
+- **OAuth callback** error pages escape user-facing content to avoid XSS.
+- **Tokens** are stored in `tokens.json` with `chmod 600` where supported. Keep `.env` and the config directory private.
+- No long-lived timers or listeners that accumulate; the rotation interval is cleared and recreated when the interval is changed.
 
 ## Image requirements
 

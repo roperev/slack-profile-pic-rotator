@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { hasSlackToken, getConfig, saveConfig } from './config.js';
@@ -156,12 +157,23 @@ export function createApp() {
     });
   });
 
+  /** Resolved path must be under the user's home dir to avoid serving system dirs. */
+  function isPathUnderSafeRoot(resolvedPath) {
+    const home = os.homedir();
+    const normalized = path.resolve(resolvedPath);
+    const homeNorm = path.resolve(home);
+    return normalized === homeNorm || normalized.startsWith(homeNorm + path.sep);
+  }
+
   app.post('/api/source', (req, res) => {
     const { imageSource, localPath } = req.body || {};
     if (imageSource === 'local' && localPath) {
       const resolved = path.resolve(localPath);
       if (!fs.existsSync(resolved)) {
         return res.status(400).json({ success: false, error: 'Path does not exist' });
+      }
+      if (!isPathUnderSafeRoot(resolved)) {
+        return res.status(400).json({ success: false, error: 'Path must be under your home directory' });
       }
       const paths = listImages(resolved);
       if (paths.length === 0) {
@@ -181,7 +193,7 @@ export async function startServer() {
   if (server) return server;
   const app = createApp();
   return new Promise((resolve) => {
-    server = app.listen(PORT, () => {
+    server = app.listen(PORT, '127.0.0.1', () => {
       resolve(server);
     });
   });
